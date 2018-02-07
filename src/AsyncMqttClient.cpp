@@ -4,13 +4,13 @@ AsyncMqttClient::AsyncMqttClient()
 : _connected(false)
 , _connectPacketNotEnoughSpace(false)
 , _disconnectFlagged(false)
-, _tlsBadFingerprint(false)
 , _lastClientActivity(0)
 , _lastServerActivity(0)
 , _lastPingRequestTime(0)
 , _host(nullptr)
 , _useIp(false)
 #if ASYNC_TCP_SSL_ENABLED
+, _tlsVerifyFailed(false)
 , _secure(false)
 #endif
 , _port(0)
@@ -108,12 +108,15 @@ AsyncMqttClient& AsyncMqttClient::setSecure(bool secure) {
   return *this;
 }
 
+#if SSL_VERIFY_BY_FINGERPRINT
 AsyncMqttClient& AsyncMqttClient::addServerFingerprint(const uint8_t* fingerprint) {
+  setSecure(true);
   std::array<uint8_t, SHA1_SIZE> newFingerprint;
   memcpy(newFingerprint.data(), fingerprint, SHA1_SIZE);
   _secureServerFingerprints.push_back(newFingerprint);
   return *this;
 }
+#endif
 #endif
 
 AsyncMqttClient& AsyncMqttClient::onConnect(AsyncMqttClientInternals::OnConnectUserCallback callback) {
@@ -156,7 +159,9 @@ void AsyncMqttClient::_clear() {
   _connected = false;
   _disconnectFlagged = false;
   _connectPacketNotEnoughSpace = false;
-  _tlsBadFingerprint = false;
+#if ASYNC_TCP_SSL_ENABLED
+  _tlsVerifyFailed = false;
+#endif
   _freeCurrentParsedPacket();
 
   _pendingPubRels.clear();
@@ -174,9 +179,11 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
   (void)client;
 
 #if ASYNC_TCP_SSL_ENABLED
-  if (_secure && _secureServerFingerprints.size() > 0) {
+  if (_secure) {
+    //Serial.println("Secure connection established, verifying...");
     SSL* clientSsl = _client.getSSL();
 
+#if SSL_VERIFY_BY_FINGERPRINT
     bool sslFoundFingerprint = false;
     for (std::array<uint8_t, SHA1_SIZE> fingerprint : _secureServerFingerprints) {
       if (ssl_match_fingerprint(clientSsl, fingerprint.data()) == SSL_OK) {
@@ -186,10 +193,14 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
     }
 
     if (!sslFoundFingerprint) {
-      _tlsBadFingerprint = true;
+      _tlsVerifyFailed = true;
       _client.close(true);
       return;
     }
+#else
+    //...
+#endif
+    //Serial.println("Secure connection verified!");
   }
 #endif
 
@@ -327,19 +338,23 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
     _client.add(passwordLengthBytes, 2);
     _client.add(_password, passwordLength);
   }
+
   _client.send();
   _lastClientActivity = millis();
 }
 
 void AsyncMqttClient::_onDisconnect(AsyncClient* client) {
   (void)client;
-  AsyncMqttClientDisconnectReason reason;
 
-  if (_connected) {
+  if (_connected && !_disconnectFlagged) {
+    AsyncMqttClientDisconnectReason reason;
+
     if (_connectPacketNotEnoughSpace) {
       reason = AsyncMqttClientDisconnectReason::ESP8266_NOT_ENOUGH_SPACE;
-    } else if (_tlsBadFingerprint) {
-      reason = AsyncMqttClientDisconnectReason::TLS_BAD_FINGERPRINT;
+#if ASYNC_TCP_SSL_ENABLED
+    } else if (_tlsVerifyFailed) {
+      reason = AsyncMqttClientDisconnectReason::TLS_VERIFY_FAILED;
+#endif
     } else {
       reason = AsyncMqttClientDisconnectReason::TCP_DISCONNECTED;
     }

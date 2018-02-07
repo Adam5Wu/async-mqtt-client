@@ -15,7 +15,9 @@
 
 #if ASYNC_TCP_SSL_ENABLED
 #include <tcp_axtls.h>
+#if SSL_VERIFY_BY_FINGERPRINT
 #define SHA1_SIZE 20
+#endif
 #endif
 
 #include "AsyncMqttClient/Flags.hpp"
@@ -52,7 +54,9 @@ class AsyncMqttClient {
   AsyncMqttClient& setServer(const char* host, uint16_t port);
 #if ASYNC_TCP_SSL_ENABLED
   AsyncMqttClient& setSecure(bool secure);
+#if SSL_VERIFY_BY_FINGERPRINT
   AsyncMqttClient& addServerFingerprint(const uint8_t* fingerprint);
+#endif
 #endif
 
   AsyncMqttClient& onConnect(AsyncMqttClientInternals::OnConnectUserCallback callback);
@@ -75,7 +79,6 @@ class AsyncMqttClient {
   bool _connected;
   bool _connectPacketNotEnoughSpace;
   bool _disconnectFlagged;
-  bool _tlsBadFingerprint;
   uint32_t _lastClientActivity;
   uint32_t _lastServerActivity;
   uint32_t _lastPingRequestTime;
@@ -86,6 +89,7 @@ class AsyncMqttClient {
   bool _useIp;
 #if ASYNC_TCP_SSL_ENABLED
   bool _secure;
+  bool _tlsVerifyFailed;
 #endif
   uint16_t _port;
   uint16_t _keepAlive;
@@ -99,7 +103,7 @@ class AsyncMqttClient {
   uint8_t _willQos;
   bool _willRetain;
 
-#if ASYNC_TCP_SSL_ENABLED
+#if ASYNC_TCP_SSL_ENABLED && SSL_VERIFY_BY_FINGERPRINT
   std::vector<std::array<uint8_t, SHA1_SIZE>> _secureServerFingerprints;
 #endif
 
