@@ -20,6 +20,10 @@
 #endif
 #endif
 
+#ifndef SSL_VERIFY_BY_FINGERPRINT
+#define SSL_VERIFY_BY_FINGERPRINT 0
+#endif
+
 #include "AsyncMqttClient/Flags.hpp"
 #include "AsyncMqttClient/ParsingInformation.hpp"
 #include "AsyncMqttClient/MessageProperties.hpp"
@@ -131,7 +135,7 @@ class AsyncMqttClient {
   // TCP
   void _onConnect(AsyncClient* client);
   void _onDisconnect(AsyncClient* client);
-  static void _onError(AsyncClient* client, int8_t error);
+  static void _onError(AsyncClient* client, err_t error);
   void _onTimeout(AsyncClient* client, uint32_t time);
   static void _onAck(AsyncClient* client, size_t len, uint32_t time);
   void _onData(AsyncClient* client, char* data, size_t len);

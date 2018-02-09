@@ -30,7 +30,7 @@ AsyncMqttClient::AsyncMqttClient()
 , _nextPacketId(1) {
   _client.onConnect([](void* obj, AsyncClient* c) { (static_cast<AsyncMqttClient*>(obj))->_onConnect(c); }, this);
   _client.onDisconnect([](void* obj, AsyncClient* c) { (static_cast<AsyncMqttClient*>(obj))->_onDisconnect(c); }, this);
-  _client.onError([](void* obj, AsyncClient* c, int8_t error) { (static_cast<AsyncMqttClient*>(obj))->_onError(c, error); }, this);
+  _client.onError([](void* obj, AsyncClient* c, err_t error) { (static_cast<AsyncMqttClient*>(obj))->_onError(c, error); }, this);
   _client.onTimeout([](void* obj, AsyncClient* c, uint32_t time) { (static_cast<AsyncMqttClient*>(obj))->_onTimeout(c, time); }, this);
   _client.onAck([](void* obj, AsyncClient* c, size_t len, uint32_t time) { (static_cast<AsyncMqttClient*>(obj))->_onAck(c, len, time); }, this);
   _client.onData([](void* obj, AsyncClient* c, void* data, size_t len) { (static_cast<AsyncMqttClient*>(obj))->_onData(c, static_cast<char*>(data), len); }, this);
@@ -360,12 +360,14 @@ void AsyncMqttClient::_onDisconnect(AsyncClient* client) {
     }
     for (auto callback : _onDisconnectUserCallbacks) callback(reason);
   }
+  //Serial.print("Disconnect!");
   _clear();
 }
 
-void AsyncMqttClient::_onError(AsyncClient* client, int8_t error) {
+void AsyncMqttClient::_onError(AsyncClient* client, err_t error) {
   (void)client;
   (void)error;
+  //Serial.printf("Error: %d\n", error);
   // _onDisconnect called anyway
 }
 
