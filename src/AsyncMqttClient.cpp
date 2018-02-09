@@ -346,7 +346,7 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
 void AsyncMqttClient::_onDisconnect(AsyncClient* client) {
   (void)client;
 
-  if (_connected && !_disconnectFlagged) {
+  if (!_disconnectFlagged) {
     AsyncMqttClientDisconnectReason reason;
 
     if (_connectPacketNotEnoughSpace) {
@@ -494,6 +494,7 @@ void AsyncMqttClient::_onConnAck(bool sessionPresent, uint8_t connectReturnCode)
     for (auto callback : _onConnectUserCallbacks) callback(sessionPresent);
   } else {
     for (auto callback : _onDisconnectUserCallbacks) callback(static_cast<AsyncMqttClientDisconnectReason>(connectReturnCode));
+    _disconnectFlagged = true;
   }
 }
 
@@ -657,6 +658,8 @@ void AsyncMqttClient::_sendAcks() {
 }
 
 bool AsyncMqttClient::_sendDisconnect() {
+  if (!_connected) return true;
+
   const uint8_t neededSpace = 2;
 
   if (_client.space() < neededSpace) return false;
@@ -672,7 +675,6 @@ bool AsyncMqttClient::_sendDisconnect() {
   _client.close(true);
 
   _disconnectFlagged = false;
-
   return true;
 }
 
