@@ -37,9 +37,9 @@ AsyncMqttClient::AsyncMqttClient()
   _client.onPoll([](void* obj, AsyncClient* c) { (static_cast<AsyncMqttClient*>(obj))->_onPoll(c); }, this);
 
 #ifdef ESP32
-  sprintf(_generatedClientId, "esp32%06x", ESP.getEfuseMac());
+  sprintf(_generatedClientId, "esp32-%06x", ESP.getEfuseMac());
 #elif defined(ESP8266)
-  sprintf(_generatedClientId, "esp8266%06x", ESP.getChipId());
+  sprintf(_generatedClientId, "esp8266-%06x", ESP.getChipId());
 #endif
   _clientId = _generatedClientId;
 
@@ -183,7 +183,7 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
     //Serial.println("Secure connection established, verifying...");
     SSL* clientSsl = _client.getSSL();
 
-#if SSL_VERIFY_BY_FINGERPRINT
+#if ASYNC_TCP_SSL_AXTLS && SSL_VERIFY_BY_FINGERPRINT
     bool sslFoundFingerprint = false;
     for (std::array<uint8_t, SHA1_SIZE> fingerprint : _secureServerFingerprints) {
       if (ssl_match_fingerprint(clientSsl, fingerprint.data()) == SSL_OK) {
@@ -197,8 +197,6 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
       _client.close(true);
       return;
     }
-#else
-    //...
 #endif
     //Serial.println("Secure connection verified!");
   }
@@ -360,14 +358,18 @@ void AsyncMqttClient::_onDisconnect(AsyncClient* client) {
     }
     for (auto callback : _onDisconnectUserCallbacks) callback(reason);
   }
-  //Serial.print("Disconnect!");
+  Serial.print("Disconnect!\n");
   _clear();
 }
 
 void AsyncMqttClient::_onError(AsyncClient* client, err_t error) {
   (void)client;
   (void)error;
-  //Serial.printf("Error: %d\n", error);
+  if (error > -100) {
+    Serial.printf("Error: %s\n", AsyncClient::errorToString(error));
+  } else {
+    Serial.printf("Error: %d\n", error);
+  }
   // _onDisconnect called anyway
 }
 
@@ -695,6 +697,7 @@ bool AsyncMqttClient::connected() const {
 
 void AsyncMqttClient::connect() {
   if (_connected) return;
+  Serial.print("Connecting...\n");
 
 #if ASYNC_TCP_SSL_ENABLED
   if (_useIp) {

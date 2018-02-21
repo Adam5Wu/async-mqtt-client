@@ -14,14 +14,18 @@
 #endif
 
 #if ASYNC_TCP_SSL_ENABLED
+
+#ifndef SSL_VERIFY_BY_FINGERPRINT
+#define SSL_VERIFY_BY_FINGERPRINT 0
+#endif
+
+#if ASYNC_TCP_SSL_AXTLS
 #include <tcp_axtls.h>
 #if SSL_VERIFY_BY_FINGERPRINT
 #define SHA1_SIZE 20
 #endif
 #endif
 
-#ifndef SSL_VERIFY_BY_FINGERPRINT
-#define SSL_VERIFY_BY_FINGERPRINT 0
 #endif
 
 #include "AsyncMqttClient/Flags.hpp"
@@ -58,7 +62,7 @@ class AsyncMqttClient {
   AsyncMqttClient& setServer(const char* host, uint16_t port);
 #if ASYNC_TCP_SSL_ENABLED
   AsyncMqttClient& setSecure(bool secure);
-#if SSL_VERIFY_BY_FINGERPRINT
+#if ASYNC_TCP_SSL_AXTLS && SSL_VERIFY_BY_FINGERPRINT
   AsyncMqttClient& addServerFingerprint(const uint8_t* fingerprint);
 #endif
 #endif
@@ -107,8 +111,10 @@ class AsyncMqttClient {
   uint8_t _willQos;
   bool _willRetain;
 
-#if ASYNC_TCP_SSL_ENABLED && SSL_VERIFY_BY_FINGERPRINT
+#if ASYNC_TCP_SSL_ENABLED
+#if ASYNC_TCP_SSL_AXTLS && SSL_VERIFY_BY_FINGERPRINT
   std::vector<std::array<uint8_t, SHA1_SIZE>> _secureServerFingerprints;
+#endif
 #endif
 
   std::vector<AsyncMqttClientInternals::OnConnectUserCallback> _onConnectUserCallbacks;
@@ -126,7 +132,6 @@ class AsyncMqttClient {
   uint16_t _nextPacketId;
 
   std::vector<AsyncMqttClientInternals::PendingPubRel> _pendingPubRels;
-
   std::vector<AsyncMqttClientInternals::PendingAck> _toSendAcks;
 
   void _clear();
