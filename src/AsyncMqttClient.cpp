@@ -1,5 +1,9 @@
 #include "AsyncMqttClient.hpp"
 
+#if ASYNC_TCP_SSL_ENABLED && ASYNC_TCP_SSL_BEARSSL
+#include "tcp_bearssl.h"
+#endif
+
 AsyncMqttClient::AsyncMqttClient()
 : _connected(false)
 , _connectPacketNotEnoughSpace(false)
@@ -35,6 +39,11 @@ AsyncMqttClient::AsyncMqttClient()
   _client.onAck([](void* obj, AsyncClient* c, size_t len, uint32_t time) { (static_cast<AsyncMqttClient*>(obj))->_onAck(c, len, time); }, this);
   _client.onData([](void* obj, AsyncClient* c, void* data, size_t len) { (static_cast<AsyncMqttClient*>(obj))->_onData(c, static_cast<char*>(data), len); }, this);
   _client.onPoll([](void* obj, AsyncClient* c) { (static_cast<AsyncMqttClient*>(obj))->_onPoll(c); }, this);
+
+#if ASYNC_TCP_SSL_ENABLED && ASYNC_TCP_SSL_BEARSSL
+  _client.setInBufSize(SSL_NEGOTIATE_BUF_SIZE_1);
+  _client.setOutBufSize(SSL_NEGOTIATE_BUF_SIZE_1);
+#endif
 
 #ifdef ESP32
   sprintf(_generatedClientId, "esp32-%06x", ESP.getEfuseMac());
@@ -358,7 +367,7 @@ void AsyncMqttClient::_onDisconnect(AsyncClient* client) {
     }
     for (auto callback : _onDisconnectUserCallbacks) callback(reason);
   }
-  Serial.print("Disconnect!\n");
+  //Serial.print("Disconnect!\n");
   _clear();
 }
 
@@ -697,7 +706,7 @@ bool AsyncMqttClient::connected() const {
 
 void AsyncMqttClient::connect() {
   if (_connected) return;
-  Serial.print("Connecting...\n");
+  //Serial.print("Connecting...\n");
 
 #if ASYNC_TCP_SSL_ENABLED
   if (_useIp) {
