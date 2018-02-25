@@ -53,13 +53,13 @@ class AsyncMqttClient {
   ~AsyncMqttClient();
 
   AsyncMqttClient& setKeepAlive(uint16_t keepAlive);
-  AsyncMqttClient& setClientId(const char* clientId);
+  AsyncMqttClient& setClientId(String const &clientId);
   AsyncMqttClient& setCleanSession(bool cleanSession);
   AsyncMqttClient& setMaxTopicLength(uint16_t maxTopicLength);
-  AsyncMqttClient& setCredentials(const char* username, const char* password = nullptr);
-  AsyncMqttClient& setWill(const char* topic, uint8_t qos, bool retain, const char* payload = nullptr, size_t length = 0);
+  AsyncMqttClient& setCredentials(String const &username, String const &password = "");
+  AsyncMqttClient& setWill(String const &topic, uint8_t qos, bool retain, String const &payload = "");
   AsyncMqttClient& setServer(IPAddress ip, uint16_t port);
-  AsyncMqttClient& setServer(const char* host, uint16_t port);
+  AsyncMqttClient& setServer(String const &host, uint16_t port);
 #if ASYNC_TCP_SSL_ENABLED
   AsyncMqttClient& setSecure(bool secure);
 #if ASYNC_TCP_SSL_AXTLS && SSL_VERIFY_BY_FINGERPRINT
@@ -67,12 +67,12 @@ class AsyncMqttClient {
 #endif
 #endif
 
-  AsyncMqttClient& onConnect(AsyncMqttClientInternals::OnConnectUserCallback callback);
-  AsyncMqttClient& onDisconnect(AsyncMqttClientInternals::OnDisconnectUserCallback callback);
-  AsyncMqttClient& onSubscribe(AsyncMqttClientInternals::OnSubscribeUserCallback callback);
-  AsyncMqttClient& onUnsubscribe(AsyncMqttClientInternals::OnUnsubscribeUserCallback callback);
-  AsyncMqttClient& onMessage(AsyncMqttClientInternals::OnMessageUserCallback callback);
-  AsyncMqttClient& onPublish(AsyncMqttClientInternals::OnPublishUserCallback callback);
+  AsyncMqttClient& onConnect(AsyncMqttClientInternals::OnConnectUserCallback const &callback);
+  AsyncMqttClient& onDisconnect(AsyncMqttClientInternals::OnDisconnectUserCallback const &callback);
+  AsyncMqttClient& onSubscribe(AsyncMqttClientInternals::OnSubscribeUserCallback const &callback);
+  AsyncMqttClient& onUnsubscribe(AsyncMqttClientInternals::OnUnsubscribeUserCallback const &callback);
+  AsyncMqttClient& onMessage(AsyncMqttClientInternals::OnMessageUserCallback const &callback);
+  AsyncMqttClient& onPublish(AsyncMqttClientInternals::OnPublishUserCallback const &callback);
 
   bool connected() const;
   void connect();
@@ -91,23 +91,22 @@ class AsyncMqttClient {
   uint32_t _lastServerActivity;
   uint32_t _lastPingRequestTime;
 
-  char _generatedClientId[13 + 1];  // esp8266abc123
   IPAddress _ip;
-  const char* _host;
-  bool _useIp;
+  String _host;
 #if ASYNC_TCP_SSL_ENABLED
   bool _secure;
+#if ASYNC_TCP_SSL_AXTLS && SSL_VERIFY_BY_FINGERPRINT
   bool _tlsVerifyFailed;
+#endif
 #endif
   uint16_t _port;
   uint16_t _keepAlive;
   bool _cleanSession;
-  const char* _clientId;
-  const char* _username;
-  const char* _password;
-  const char* _willTopic;
-  const char* _willPayload;
-  uint16_t _willPayloadLength;
+  String _clientId;
+  String _username;
+  String _password;
+  String _willTopic;
+  String _willPayload;
   uint8_t _willQos;
   bool _willRetain;
 
@@ -117,12 +116,12 @@ class AsyncMqttClient {
 #endif
 #endif
 
-  std::vector<AsyncMqttClientInternals::OnConnectUserCallback> _onConnectUserCallbacks;
-  std::vector<AsyncMqttClientInternals::OnDisconnectUserCallback> _onDisconnectUserCallbacks;
-  std::vector<AsyncMqttClientInternals::OnSubscribeUserCallback> _onSubscribeUserCallbacks;
-  std::vector<AsyncMqttClientInternals::OnUnsubscribeUserCallback> _onUnsubscribeUserCallbacks;
-  std::vector<AsyncMqttClientInternals::OnMessageUserCallback> _onMessageUserCallbacks;
-  std::vector<AsyncMqttClientInternals::OnPublishUserCallback> _onPublishUserCallbacks;
+  AsyncMqttClientInternals::OnConnectUserCallback _onConnectUserCallbacks;
+  AsyncMqttClientInternals::OnDisconnectUserCallback _onDisconnectUserCallbacks;
+  AsyncMqttClientInternals::OnSubscribeUserCallback _onSubscribeUserCallbacks;
+  AsyncMqttClientInternals::OnUnsubscribeUserCallback _onUnsubscribeUserCallbacks;
+  AsyncMqttClientInternals::OnMessageUserCallback _onMessageUserCallbacks;
+  AsyncMqttClientInternals::OnPublishUserCallback _onPublishUserCallbacks;
 
   AsyncMqttClientInternals::ParsingInformation _parsingInformation;
   AsyncMqttClientInternals::Packet* _currentParsedPacket;

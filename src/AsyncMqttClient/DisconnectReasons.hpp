@@ -12,6 +12,8 @@ enum class AsyncMqttClientDisconnectReason : int8_t {
   ESP8266_NOT_ENOUGH_SPACE = 6,
 
 #if ASYNC_TCP_SSL_ENABLED
+#if ASYNC_TCP_SSL_AXTLS && SSL_VERIFY_BY_FINGERPRINT
   TLS_VERIFY_FAILED = 7,
+#endif
 #endif
 };
