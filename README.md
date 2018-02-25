@@ -10,7 +10,7 @@ Works with BearSSL port, which brings compatiblility with brokers using ECDSA ce
 * [Upstream Project](https://github.com/marvinroger/async-mqtt-client)
 * [Modifications of this fork](MODIFICATIONS.md)
 * Requires:
-	- [ESP8266 Arduino Core fork](https://github.com/Adam5Wu/Arduino)
+	- [ESP8266 Arduino Core fork](https://github.com/Adam5Wu/Arduino-esp8266)
   - [ESPAsyncTCP fork](https://github.com/Adam5Wu/ESPAsyncTCP)
 * Potentially interesting:
 	- [ESP8266 BearSSL Port fork](https://github.com/Adam5Wu/bearssl-esp8266)
