@@ -1,18 +1,16 @@
-Async MQTT client for ESP8266 and ESP32
-=============================
+# Async MQTT client for ESP8266 and ESP32
+[![Build Status](https://travis-ci.org/Adam5Wu/async-mqtt-client.svg?branch=adam5wu/master)](https://travis-ci.org/Adam5Wu/async-mqtt-client)
+[![GitHub issues](https://img.shields.io/github/issues/Adam5Wu/async-mqtt-client.svg)](https://github.com/Adam5Wu/async-mqtt-client/issues)
+[![GitHub forks](https://img.shields.io/github/forks/Adam5Wu/async-mqtt-client.svg)](https://github.com/Adam5Wu/async-mqtt-client/network)
+[![License](https://img.shields.io/github/license/Adam5Wu/async-mqtt-client.svg)](./LICENSE)
 
-[![Build Status](https://img.shields.io/travis/marvinroger/async-mqtt-client/master.svg?style=flat-square)](https://travis-ci.org/marvinroger/async-mqtt-client)
+An Arduino for ESP8266 and ESP32 asynchronous [MQTT](http://mqtt.org/) client implementation.
+Works with BearSSL port, which brings compatiblility with brokers using ECDSA certificates, and supports SNI and [maximum fragment length negotiation](https://tools.ietf.org/html/rfc6066#page-8).
 
-An Arduino for ESP8266 and ESP32 asynchronous [MQTT](http://mqtt.org/) client implementation, built on [me-no-dev/ESPAsyncTCP (ESP8266)](https://github.com/me-no-dev/ESPAsyncTCP) | [me-no-dev/AsyncTCP (ESP32)](https://github.com/me-no-dev/AsyncTCP) .
-## Features
-
-* Compliant with the 3.1.1 version of the protocol
-* Fully asynchronous
-* Subscribe at QoS 0, 1 and 2
-* Publish at QoS 0, 1 and 2
-* SSL/TLS support
-* Available in the [PlatformIO registry](http://platformio.org/lib/show/346/AsyncMqttClient)
-
-## Requirements, installation and usage
-
-The project is documented in the [/docs folder](docs).
+* [Upstream Project](https://github.com/marvinroger/async-mqtt-client)
+* [Modifications of this fork](MODIFICATIONS.md)
+* Requires:
+	- [ESP8266 Arduino Core fork](https://github.com/Adam5Wu/Arduino)
+  - [ESPAsyncTCP fork](https://github.com/Adam5Wu/ESPAsyncTCP)
+* Potentially interesting:
+	- [ESP8266 BearSSL Port fork](https://github.com/Adam5Wu/bearssl-esp8266)
