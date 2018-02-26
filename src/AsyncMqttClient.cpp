@@ -502,12 +502,8 @@ void AsyncMqttClient::_onConnAck(bool sessionPresent, uint8_t connectReturnCode)
     _connected = true;
     if (_onConnectUserCallbacks) _onConnectUserCallbacks(sessionPresent);
   } else {
-<<<<<<< HEAD
-    for (auto callback : _onDisconnectUserCallbacks) callback(static_cast<AsyncMqttClientDisconnectReason>(connectReturnCode));
-=======
     if (_onDisconnectUserCallbacks)
       _onDisconnectUserCallbacks(static_cast<AsyncMqttClientDisconnectReason>(connectReturnCode));
->>>>>>> feature/ImproveSSLVerify
     _disconnectFlagged = true;
   }
 }
