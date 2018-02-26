@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/github/license/Adam5Wu/async-mqtt-client.svg)](./LICENSE)
 
 An Arduino for ESP8266 and ESP32 asynchronous [MQTT](http://mqtt.org/) client implementation.
-Works with BearSSL port, which brings compatiblility with brokers using ECDSA certificates, and supports SNI and [maximum fragment length negotiation](https://tools.ietf.org/html/rfc6066#page-8).
+Modified to work with AsyncTCP fork that works with BearSSL port, which brings compatiblility with brokers using ECDSA certificates, supports SNI, and [maximum fragment length negotiation](https://tools.ietf.org/html/rfc6066#page-8).
 
 * [Upstream Project](https://github.com/marvinroger/async-mqtt-client)
 * [Modifications of this fork](MODIFICATIONS.md)
