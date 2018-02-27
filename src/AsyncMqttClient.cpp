@@ -281,13 +281,7 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
     passwordLengthBytes[1] = passwordLength & 0xFF;
   }
 
-  uint32_t remainingLength = 2 + protocolNameLength + 1 + 1 + 2 + 2 + clientIdLength;  // always present
-  if (_willTopic != nullptr) remainingLength += 2 + willTopicLength + 2 + willPayloadLength;
-  if (_username != nullptr) remainingLength += 2 + usernameLength;
-  if (_password != nullptr) remainingLength += 2 + passwordLength;
-  uint8_t remainingLengthLength = AsyncMqttClientInternals::Helpers::encodeRemainingLength(remainingLength, fixedHeader + 1);
-
-  uint32_t neededSpace = 1 + remainingLengthLength;
+  uint32_t neededSpace = 0;
   neededSpace += sizeof(protocolNameLengthBytes);
   neededSpace += protocolNameLength;
   neededSpace += sizeof(protocolLevel);
@@ -300,7 +294,7 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
     neededSpace += willTopicLength;
 
     neededSpace += sizeof(willPayloadLengthBytes);
-    if (!_willPayload.empty()) neededSpace += willPayloadLength;
+    neededSpace += willPayloadLength;
   }
   if (!_username.empty()) {
     neededSpace += sizeof(usernameLengthBytes);
@@ -310,6 +304,9 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
     neededSpace += sizeof(passwordLengthBytes);
     neededSpace += passwordLength;
   }
+  uint8_t headerRemainingLength = AsyncMqttClientInternals::Helpers::encodeRemainingLength(neededSpace, fixedHeader + 1);
+
+  neededSpace += 1 + headerRemainingLength;
 
   if (_client.space() < neededSpace) {
     _connectPacketNotEnoughSpace = true;
@@ -317,7 +314,7 @@ void AsyncMqttClient::_onConnect(AsyncClient* client) {
     return;
   }
 
-  _client.add(fixedHeader, 1 + remainingLengthLength);
+  _client.add(fixedHeader, 1 + headerRemainingLength);
   _client.add(protocolNameLengthBytes, sizeof(protocolNameLengthBytes));
   _client.add("MQTT", protocolNameLength);
   _client.add(protocolLevel, sizeof(protocolLevel));
@@ -749,21 +746,22 @@ uint16_t AsyncMqttClient::subscribe(const char* topic, uint8_t qos) {
   char qosByte[1];
   qosByte[0] = qos;
 
-  uint8_t remainingLengthLength = AsyncMqttClientInternals::Helpers::encodeRemainingLength(2 + 2 + topicLength + 1, fixedHeader + 1);
-
   size_t neededSpace = 0;
-  neededSpace += 1 + remainingLengthLength;
   neededSpace += sizeof(packetIdBytes);
   neededSpace += sizeof(topicLengthBytes);
   neededSpace += topicLength;
   neededSpace += sizeof(qosByte);
+
+  uint8_t headerRemainingLength = AsyncMqttClientInternals::Helpers::encodeRemainingLength(neededSpace, fixedHeader + 1);
+
+  neededSpace += 1 + headerRemainingLength;
   if (_client.space() < neededSpace) return 0;
 
   uint16_t packetId = _getNextPacketId();
   packetIdBytes[0] = packetId >> 8;
   packetIdBytes[1] = packetId & 0xFF;
 
-  _client.add(fixedHeader, 1 + remainingLengthLength);
+  _client.add(fixedHeader, 1 + headerRemainingLength);
   _client.add(packetIdBytes, sizeof(packetIdBytes));
   _client.add(topicLengthBytes, sizeof(topicLengthBytes));
   _client.add(topic, topicLength);
@@ -789,20 +787,21 @@ uint16_t AsyncMqttClient::unsubscribe(const char* topic) {
   topicLengthBytes[0] = topicLength >> 8;
   topicLengthBytes[1] = topicLength & 0xFF;
 
-  uint8_t remainingLengthLength = AsyncMqttClientInternals::Helpers::encodeRemainingLength(2 + 2 + topicLength, fixedHeader + 1);
-
   size_t neededSpace = 0;
-  neededSpace += 1 + remainingLengthLength;
   neededSpace += sizeof(packetIdBytes);
   neededSpace += sizeof(topicLengthBytes);
   neededSpace += topicLength;
+
+  uint8_t headerRemainingLength = AsyncMqttClientInternals::Helpers::encodeRemainingLength(neededSpace, fixedHeader + 1);
+
+  neededSpace += 1 + headerRemainingLength;
   if (_client.space() < neededSpace) return 0;
 
   uint16_t packetId = _getNextPacketId();
   packetIdBytes[0] = packetId >> 8;
   packetIdBytes[1] = packetId & 0xFF;
 
-  _client.add(fixedHeader, 1 + remainingLengthLength);
+  _client.add(fixedHeader, 1 + headerRemainingLength);
   _client.add(packetIdBytes, sizeof(packetIdBytes));
   _client.add(topicLengthBytes, sizeof(topicLengthBytes));
   _client.add(topic, topicLength);
@@ -812,7 +811,7 @@ uint16_t AsyncMqttClient::unsubscribe(const char* topic) {
   return packetId;
 }
 
-uint16_t AsyncMqttClient::publish(const char* topic, uint8_t qos, bool retain, const char* payload, size_t length, bool dup, uint16_t message_id) {
+uint16_t AsyncMqttClient::publish(const char* topic, uint8_t qos, bool retain, String const &payload, bool dup, uint16_t message_id) {
   if (!_connected) return 0;
 
   char fixedHeader[5];
@@ -839,19 +838,16 @@ uint16_t AsyncMqttClient::publish(const char* topic, uint8_t qos, bool retain, c
 
   char packetIdBytes[2];
 
-  uint32_t payloadLength = length;
-  if (payload != nullptr && payloadLength == 0) payloadLength = strlen(payload);
-
-  uint32_t remainingLength = 2 + topicLength + payloadLength;
-  if (qos != 0) remainingLength += 2;
-  uint8_t remainingLengthLength = AsyncMqttClientInternals::Helpers::encodeRemainingLength(remainingLength, fixedHeader + 1);
-
   size_t neededSpace = 0;
-  neededSpace += 1 + remainingLengthLength;
   neededSpace += sizeof(topicLengthBytes);
   neededSpace += topicLength;
-  if (qos != 0) neededSpace += 2;
-  if (payload != nullptr) neededSpace += payloadLength;
+  if (qos != 0) neededSpace += sizeof(packetIdBytes);
+  uint32_t payloadLength = payload.length();
+  neededSpace += payloadLength;
+
+  uint8_t headerRemainingLength = AsyncMqttClientInternals::Helpers::encodeRemainingLength(neededSpace, fixedHeader + 1);
+
+  neededSpace += 1 + headerRemainingLength;
   if (_client.space() < neededSpace) return 0;
 
   uint16_t packetId = 0;
@@ -866,11 +862,11 @@ uint16_t AsyncMqttClient::publish(const char* topic, uint8_t qos, bool retain, c
     packetIdBytes[1] = packetId & 0xFF;
   }
 
-  _client.add(fixedHeader, 1 + remainingLengthLength);
+  _client.add(fixedHeader, 1 + headerRemainingLength);
   _client.add(topicLengthBytes, sizeof(topicLengthBytes));
   _client.add(topic, topicLength);
   if (qos != 0) _client.add(packetIdBytes, sizeof(packetIdBytes));
-  if (payload != nullptr) _client.add(payload, payloadLength);
+  if (!payload.empty()) _client.add(payload.begin(), payloadLength);
   _client.send();
   _lastClientActivity = millis();
 
