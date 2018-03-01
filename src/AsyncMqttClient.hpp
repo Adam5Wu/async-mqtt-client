@@ -56,8 +56,8 @@ class AsyncMqttClient {
   AsyncMqttClient& setClientId(String const &clientId);
   AsyncMqttClient& setCleanSession(bool cleanSession);
   AsyncMqttClient& setMaxTopicLength(uint16_t maxTopicLength);
-  AsyncMqttClient& setCredentials(String const &username, String const &password = "");
-  AsyncMqttClient& setWill(String const &topic, uint8_t qos, bool retain, String const &payload = "");
+  AsyncMqttClient& setCredentials(String const &username, String const &password = String::EMPTY);
+  AsyncMqttClient& setWill(String const &topic, uint8_t qos, bool retain, String const &payload = String::EMPTY);
   AsyncMqttClient& setServer(IPAddress ip, uint16_t port);
   AsyncMqttClient& setServer(String const &host, uint16_t port);
 #if ASYNC_TCP_SSL_ENABLED
@@ -79,7 +79,8 @@ class AsyncMqttClient {
   void disconnect(bool force = false);
   uint16_t subscribe(const char* topic, uint8_t qos);
   uint16_t unsubscribe(const char* topic);
-  uint16_t publish(const char* topic, uint8_t qos, bool retain, String const &payload = "", bool dup = false, uint16_t message_id = 0);
+  uint16_t publish(const char* topic, uint8_t qos, bool retain, String const &payload = String::EMPTY,
+	bool dup = false, uint16_t message_id = 0);
 
  private:
   AsyncClient _client;
