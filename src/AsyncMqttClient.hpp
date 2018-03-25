@@ -80,9 +80,9 @@ class AsyncMqttClient {
   bool connected() const;
   void connect();
   void disconnect(bool force = false);
-  uint16_t subscribe(const char* topic, uint8_t qos);
-  uint16_t unsubscribe(const char* topic);
-  uint16_t publish(const char* topic, uint8_t qos, bool retain, String const &payload = String::EMPTY,
+  uint16_t subscribe(String const &topic, uint8_t qos);
+  uint16_t unsubscribe(String const &topic);
+  uint16_t publish(String const &topic, uint8_t qos, bool retain, String const &payload = String::EMPTY,
     bool dup = false, uint16_t message_id = 0);
 
  private:

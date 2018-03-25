@@ -746,7 +746,7 @@ void AsyncMqttClient::disconnect(bool force) {
   }
 }
 
-uint16_t AsyncMqttClient::subscribe(const char* topic, uint8_t qos) {
+uint16_t AsyncMqttClient::subscribe(String const &topic, uint8_t qos) {
   if (!_connected) return 0;
 
   char fixedHeader[5];
@@ -756,7 +756,7 @@ uint16_t AsyncMqttClient::subscribe(const char* topic, uint8_t qos) {
 
   char packetIdBytes[2];
 
-  uint16_t topicLength = strlen(topic);
+  uint16_t topicLength = topic.length();
   char topicLengthBytes[2];
   topicLengthBytes[0] = topicLength >> 8;
   topicLengthBytes[1] = topicLength & 0xFF;
@@ -782,7 +782,7 @@ uint16_t AsyncMqttClient::subscribe(const char* topic, uint8_t qos) {
   _client.add(fixedHeader, 1 + headerRemainingLength);
   _client.add(packetIdBytes, sizeof(packetIdBytes));
   _client.add(topicLengthBytes, sizeof(topicLengthBytes));
-  _client.add(topic, topicLength);
+  _client.add(topic.begin(), topicLength);
   _client.add(qosByte, sizeof(qosByte));
   _client.send();
   _lastClientActivity = millis();
@@ -790,7 +790,7 @@ uint16_t AsyncMqttClient::subscribe(const char* topic, uint8_t qos) {
   return packetId;
 }
 
-uint16_t AsyncMqttClient::unsubscribe(const char* topic) {
+uint16_t AsyncMqttClient::unsubscribe(String const &topic) {
   if (!_connected) return 0;
 
   char fixedHeader[5];
@@ -800,7 +800,7 @@ uint16_t AsyncMqttClient::unsubscribe(const char* topic) {
 
   char packetIdBytes[2];
 
-  uint16_t topicLength = strlen(topic);
+  uint16_t topicLength = topic.length();
   char topicLengthBytes[2];
   topicLengthBytes[0] = topicLength >> 8;
   topicLengthBytes[1] = topicLength & 0xFF;
@@ -822,14 +822,14 @@ uint16_t AsyncMqttClient::unsubscribe(const char* topic) {
   _client.add(fixedHeader, 1 + headerRemainingLength);
   _client.add(packetIdBytes, sizeof(packetIdBytes));
   _client.add(topicLengthBytes, sizeof(topicLengthBytes));
-  _client.add(topic, topicLength);
+  _client.add(topic.begin(), topicLength);
   _client.send();
   _lastClientActivity = millis();
 
   return packetId;
 }
 
-uint16_t AsyncMqttClient::publish(const char* topic, uint8_t qos, bool retain, String const &payload, bool dup, uint16_t message_id) {
+uint16_t AsyncMqttClient::publish(String const &topic, uint8_t qos, bool retain, String const &payload, bool dup, uint16_t message_id) {
   if (!_connected) return 0;
 
   char fixedHeader[5];
@@ -849,7 +849,7 @@ uint16_t AsyncMqttClient::publish(const char* topic, uint8_t qos, bool retain, S
       break;
   }
 
-  uint16_t topicLength = strlen(topic);
+  uint16_t topicLength = topic.length();
   char topicLengthBytes[2];
   topicLengthBytes[0] = topicLength >> 8;
   topicLengthBytes[1] = topicLength & 0xFF;
@@ -882,7 +882,7 @@ uint16_t AsyncMqttClient::publish(const char* topic, uint8_t qos, bool retain, S
 
   _client.add(fixedHeader, 1 + headerRemainingLength);
   _client.add(topicLengthBytes, sizeof(topicLengthBytes));
-  _client.add(topic, topicLength);
+  _client.add(topic.begin(), topicLength);
   if (qos != 0) _client.add(packetIdBytes, sizeof(packetIdBytes));
   if (!payload.empty()) _client.add(payload.begin(), payloadLength);
   _client.send();
