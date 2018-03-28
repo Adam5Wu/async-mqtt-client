@@ -158,7 +158,7 @@ class AsyncMqttClient {
   void _onConnAck(bool sessionPresent, uint8_t connectReturnCode);
   void _onSubAck(uint16_t packetId, char status);
   void _onUnsubAck(uint16_t packetId);
-  void _onMessage(char* topic, char* payload, uint8_t qos, bool dup, bool retain, size_t len, size_t index, size_t total, uint16_t packetId);
+  void _onMessage(char const *topic, char const *payload, uint8_t qos, bool dup, bool retain, size_t len, size_t index, size_t total, uint16_t packetId);
   void _onPublish(uint16_t packetId, uint8_t qos);
   void _onPubRel(uint16_t packetId);
   void _onPubAck(uint16_t packetId);

@@ -134,7 +134,10 @@ AsyncMqttClient& AsyncMqttClient::onSSLCertLookup(AsyncMqttClientInternals::OnSS
 
 int AsyncMqttClient::_onSSLCertLookup(AsyncClient* client, void *dn_hash, size_t dn_hash_len, uint8_t **buf) {
   (void)client;
-  return _onSSLCertLookupCallback(dn_hash, dn_hash_len, buf);
+  if (_onSSLCertLookupCallback) {
+    return _onSSLCertLookupCallback(dn_hash, dn_hash_len, buf);
+  }
+  return 0;
 }
 #endif
 #endif
@@ -378,18 +381,18 @@ void AsyncMqttClient::_onDisconnect(AsyncClient* client) {
     }
     if (_onDisconnectUserCallback) _onDisconnectUserCallback(reason);
   }
-  //Serial.print("Disconnect!\n");
   _clear();
 }
 
 void AsyncMqttClient::_onError(AsyncClient* client, err_t error) {
   (void)client;
   (void)error;
-  if (error > -100) {
-    Serial.printf("Error: %s\n", AsyncClient::errorToString(error));
-  } else {
-    Serial.printf("Error: %d\n", error);
-  }
+  //if (error > -100 && error < 0) {
+  //  Serial.printf("Error: %s\n",
+  //    String(FPSTR(AsyncClient::errorToString(error))).c_str());
+  //} else {
+  //  Serial.printf("Error: %d\n", error);
+  //}
   // _onDisconnect called anyway
 }
 
@@ -493,7 +496,6 @@ void AsyncMqttClient::_onPoll(AsyncClient* client) {
   }
 
   // handle to send ack packets
-
   _sendAcks();
 
   // handle disconnect
@@ -535,7 +537,7 @@ void AsyncMqttClient::_onUnsubAck(uint16_t packetId) {
   if (_onUnsubscribeUserCallback) _onUnsubscribeUserCallback(packetId);
 }
 
-void AsyncMqttClient::_onMessage(char* topic, char* payload, uint8_t qos, bool dup, bool retain, size_t len, size_t index, size_t total, uint16_t packetId) {
+void AsyncMqttClient::_onMessage(char const *topic, char const *payload, uint8_t qos, bool dup, bool retain, size_t len, size_t index, size_t total, uint16_t packetId) {
   bool notifyPublish = true;
 
   if (qos == 2) {
@@ -636,17 +638,17 @@ void AsyncMqttClient::_onPubComp(uint16_t packetId) {
 
 bool AsyncMqttClient::_sendPing() {
   char fixedHeader[2];
+  size_t neededSpace = sizeof(fixedHeader);
+  if (_client.space() < neededSpace) return false;
+
   fixedHeader[0] = AsyncMqttClientInternals::PacketType.PINGREQ;
   fixedHeader[0] = fixedHeader[0] << 4;
   fixedHeader[0] = fixedHeader[0] | AsyncMqttClientInternals::HeaderFlag.PINGREQ_RESERVED;
   fixedHeader[1] = 0;
 
-  size_t neededSpace = 2;
-
-  if (_client.space() < neededSpace) return false;
-
-  _client.add(fixedHeader, 2);
+  _client.add(fixedHeader, sizeof(fixedHeader));
   _client.send();
+
   _lastClientActivity = millis();
   _lastPingRequestTime = millis();
 
@@ -654,20 +656,20 @@ bool AsyncMqttClient::_sendPing() {
 }
 
 void AsyncMqttClient::_sendAcks() {
-  uint8_t neededAckSpace = 2 + 2;
+  char fixedHeader[2];
+  char packetIdBytes[2];
+  uint8_t neededAckSpace = sizeof(fixedHeader) + sizeof(packetIdBytes);
 
   for (size_t i = 0; i < _toSendAcks.size(); i++) {
     if (_client.space() < neededAckSpace) break;
 
     AsyncMqttClientInternals::PendingAck pendingAck = _toSendAcks[i];
 
-    char fixedHeader[2];
     fixedHeader[0] = pendingAck.packetType;
     fixedHeader[0] = fixedHeader[0] << 4;
     fixedHeader[0] = fixedHeader[0] | pendingAck.headerFlag;
     fixedHeader[1] = 2;
 
-    char packetIdBytes[2];
     packetIdBytes[0] = pendingAck.packetId >> 8;
     packetIdBytes[1] = pendingAck.packetId & 0xFF;
 
@@ -685,11 +687,10 @@ void AsyncMqttClient::_sendAcks() {
 bool AsyncMqttClient::_sendDisconnect() {
   if (!_connected) return true;
 
-  const uint8_t neededSpace = 2;
-
+  char fixedHeader[2];
+  const uint8_t neededSpace = sizeof(fixedHeader);
   if (_client.space() < neededSpace) return false;
 
-  char fixedHeader[2];
   fixedHeader[0] = AsyncMqttClientInternals::PacketType.DISCONNECT;
   fixedHeader[0] = fixedHeader[0] << 4;
   fixedHeader[0] = fixedHeader[0] | AsyncMqttClientInternals::HeaderFlag.DISCONNECT_RESERVED;
@@ -718,7 +719,6 @@ bool AsyncMqttClient::connected() const {
 
 void AsyncMqttClient::connect() {
   if (_connected) return;
-  //Serial.print("Connecting...\n");
 
   if (_host.empty()) {
 #if ASYNC_TCP_SSL_ENABLED
@@ -736,11 +736,11 @@ void AsyncMqttClient::connect() {
 }
 
 void AsyncMqttClient::disconnect(bool force) {
-  if (!_connected) return;
-
   if (force) {
     _client.close(true);
-  } else {
+    return;
+  }
+  if (_connected) {
     _disconnectFlagged = true;
     _sendDisconnect();
   }
