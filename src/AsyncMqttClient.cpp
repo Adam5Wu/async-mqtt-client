@@ -35,8 +35,8 @@ AsyncMqttClient::AsyncMqttClient()
   _client.onPoll([](void* obj, AsyncClient* c) { (static_cast<AsyncMqttClient*>(obj))->_onPoll(c); }, this);
 
 #if ASYNC_TCP_SSL_ENABLED && ASYNC_TCP_SSL_BEARSSL
-  _client.setInBufSize(SSL_NEGOTIATE_BUF_SIZE_1);
-  _client.setOutBufSize(SSL_NEGOTIATE_BUF_SIZE_1);
+  _client.setInBufSize(SSL_NEGOTIATE_BUF_SIZE_0);
+  _client.setOutBufSize(SSL_NEGOTIATE_BUF_SIZE_0);
   _client.onSSLCertLookup([](void* obj, AsyncClient* c, void *dn_hash,
     size_t dn_hash_len, uint8_t **buf) {
       return (static_cast<AsyncMqttClient*>(obj))
