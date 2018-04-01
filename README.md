@@ -8,7 +8,6 @@ An Arduino for ESP8266 and ESP32 asynchronous [MQTT](http://mqtt.org/) client im
 Modified to work with AsyncTCP fork that works with BearSSL port, which brings compatiblility with brokers using ECDSA certificates, supports SNI, and [maximum fragment length negotiation](https://tools.ietf.org/html/rfc6066#page-8).
 
 * [Upstream Project](https://github.com/marvinroger/async-mqtt-client)
-* [Modifications of this fork](MODIFICATIONS.md)
 * Requires:
 	- [ESP8266 Arduino Core fork](https://github.com/Adam5Wu/Arduino-esp8266)
   - [ESPAsyncTCP fork](https://github.com/Adam5Wu/ESPAsyncTCP)
